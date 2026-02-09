@@ -11,21 +11,28 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+# Read .env file if it exists
+environ.Env.read_env(os.path.join(BASE_DIR.parent, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-m7jb70u*7jt14&y0oj7m*f(xtrihp=o*z5z2sqw^8p-a*koipp"
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-m7jb70u*7jt14&y0oj7m*f(xtrihp=o*z5z2sqw^8p-a*koipp')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['abudhabilifeguide-cdbtbhajb7h8e3ey.uaenorth-01.azurewebsites.net', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['abudhabilifeguide-cdbtbhajb7h8e3ey.uaenorth-01.azurewebsites.net', 'localhost', '127.0.0.1'])
 
 # Application definition
 

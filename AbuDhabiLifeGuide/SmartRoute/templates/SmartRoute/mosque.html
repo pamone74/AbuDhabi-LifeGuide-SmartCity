@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Worship Places</title>
+    <title>Mosque Locations</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -71,31 +72,12 @@
 
 <body>
     <h1>Mosque Locations</h1>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="{% static 'js/map.js' %}"></script>
-</body>
+    <div class="container">
+        <!-- Left Panel: Map -->
+        <div class="map-container">
+            <div id="map" class="map"></div>
+        </div>
 
-<<<<<<< HEAD </html>
-    {% load static %}
-    <!DOCTYPE html>
-    <html lang="en">
-
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Mosque Locations Map</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-        <link rel="stylesheet" href="{% static 'css/style.css' %}">
-        <link rel="stylesheet" href="{% static 'css/map.css' %}" />
-    </head>
-
-    <body>
-        <h1>Mosque Locations</h1>
-        <div id="map"></div>
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-        <script src="{% static 'js/map.js' %}"></script>
-        =======
         <!-- Right Panel: Form and Recommendations -->
         <div class="form-container">
             <form method="post">
@@ -119,60 +101,57 @@
             <p>{{ error }}</p>
             {% endif %}
         </div>
-        </div>
+    </div>
 
-        <script>
-            // Initialize the map with a default center at UAE
-            const map = L.map('map').setView([25.276987, 55.296249], 10); // Default center at UAE
+    <script>
+        // Initialize the map with a default center at UAE
+        const map = L.map('map').setView([25.276987, 55.296249], 10);
 
-            // Tile layer for OpenStreetMap
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+        // Tile layer for OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-            // Function to center map on user's current location and add circle
-            function centerMapOnUserLocation() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(function (position) {
-                        const userLat = position.coords.latitude;
-                        const userLon = position.coords.longitude;
+        // Function to center map on user's current location and add circle
+        function centerMapOnUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
 
-                        // Set the map's center to the user's location
-                        map.setView([userLat, userLon], 13);
-                        // Add a marker for the user's current location
-                        L.marker([userLat, userLon]).addTo(map).bindPopup('<b>Your Location</b>').openPopup();
-                        // Draw a circle with a radius (in meters) around the user's location
-                        const radiusInMeters = 5000; // Example radius of 5 kilometers (adjust as needed)
-                        const circle = L.circle([userLat, userLon], {
-                            color: 'blue', // Circle color
-                            fillColor: 'blue', // Fill color
-                            fillOpacity: 0.2, // Fill opacity
-                            radius: radiusInMeters // Radius in meters
-                        }).addTo(map);
-                        circle.bindPopup(`<b>Radius: ${radiusInMeters / 1000} km</b>`).openPopup(); // Show the radius in km
-                    }, function (error) {
-                        console.error("Error occurred while fetching location: ", error);
-                    });
-                } else {
-                    alert("Geolocation is not supported by this browser.");
-                }
+                    // Set the map's center to the user's location
+                    map.setView([userLat, userLon], 13);
+                    // Add a marker for the user's current location
+                    L.marker([userLat, userLon]).addTo(map).bindPopup('<b>Your Location</b>').openPopup();
+                    // Draw a circle with a radius (in meters) around the user's location
+                    const radiusInMeters = 5000; // Example radius of 5 kilometers
+                    const circle = L.circle([userLat, userLon], {
+                        color: 'blue',
+                        fillColor: 'blue',
+                        fillOpacity: 0.2,
+                        radius: radiusInMeters
+                    }).addTo(map);
+                    circle.bindPopup(`<b>Radius: ${radiusInMeters / 1000} km</b>`).openPopup();
+                }, function (error) {
+                    console.error("Error occurred while fetching location: ", error);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
             }
+        }
 
-            // Call function to center map on user's location and add circle
-            centerMapOnUserLocation();
+        // Call function to center map on user's location and add circle
+        centerMapOnUserLocation();
 
-            // Iterate through coordinatesData (this comes from your context, passed from Django)
-            {% comment %}
-            const coordinatesData = {{ coordinates_json| safe }}; // Use JSON data passed from Django view
-            coordinatesData.forEach((coord, index) => {
-                const marker = L.marker([coord.lat, coord.lon]).addTo(map);
-                marker.bindPopup(`<b>Location ${index + 1}</b>`).openPopup();
-            });
-            {% endcomment %}
-        </script>
+        // Add coordinates from recommendations if available
+        {% if coordinates %}
+        const coordinatesData = {{ coordinates|safe }};
+        coordinatesData.forEach((coord, index) => {
+            const marker = L.marker([coord.lat, coord.lon]).addTo(map);
+            marker.bindPopup(`<b>Location ${index + 1}</b>`).openPopup();
+        });
+        {% endif %}
+    </script>
+</body>
 
-
-        >>>>>>> ebbc554 (changes are updated)
-    </body>
-
-    </html>
+</html>

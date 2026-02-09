@@ -1,8 +1,29 @@
+import os
 import requests
 from django.http import JsonResponse
 from django.shortcuts import render
-import openai
+from openai import AzureOpenAI
 import re
+import logging
+import environ
+
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+# Initialize Azure OpenAI client
+try:
+    client = AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version="2024-02-01",
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+    )
+except Exception as e:
+    logger.warning(f"Azure OpenAI client initialization failed: {str(e)}")
+    client = None
 
 def fetch_parking_data(request):
     url = 'https://arcgis.sdi.abudhabi.ae/agspublish/rest/services/OpenData/ADSDI_OpenData/MapServer/91/query'
@@ -17,33 +38,7 @@ def fetch_parking_data(request):
 
 def home(request):
     return render(request, 'SmartRoute/index.html')
-# def map_view(request):
-#     return render(request, 'SmartRoute/mosque.html')
-# def mosque_map(request):
-#     return render(request, 'SmartRoute/mosque.html')
-# def worship_places(request):
-#     return render(request, 'SmartRoute/worship_places.html')
-# def tourist(request):
-#     return render(request, 'SmartRoute/tourist.html')
-# def shopping(request):
-#     return render(request, 'SmartRoute/shopping.html')
-# def event(request):
-#     return render(request, 'SmartRoute/event.html')
-# def bookparking(request):
-#     return render(request, 'SmartRoute/bookparking.html')
 
-openai.api_key = "1SL5yj5wgPaivYPNfqgpuVmI8wBnKD57LBgBm4uHq6uexs4cs8cJJQQJ99AKACF24PCXJ3w3AAAAACOGaSsv"  # Replace with your Azure AI Key
-openai.api_base = "https://amone-patrick.openai.azure.com/"
-openai.api_type = "azure"
-openai.api_version = "2023-03-15-preview"
-
-from django.shortcuts import render
-import openai  # Ensure you have the OpenAI library installed
-
-
-import re
-
-import re
 
 def parse_and_format(raw_text):
     # Replace ** ** with <strong> tags
@@ -77,15 +72,7 @@ def recommend_worship_church(request):
             "Include details about facilities, accessibility, and any special features give me their cordinates."
         )
         try:
-            response = openai.ChatCompletion.create(
-                engine="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=1000
-            )
-            recommendations = response['choices'][0]['message']['content'].strip()
+            recommendations = get_openai_recommendations(system_prompt, user_prompt)
             context['recommendations'] = parse_and_format(recommendations)
             coordinate_pattern = r"(\d+\.\d+)[^\d]*(\d+\.\d+)[^\d]*([NS, EW]*)"
             coordinates = re.findall(coordinate_pattern, recommendations)
@@ -121,15 +108,7 @@ def recommend_worship_mosque(request):
         )
 
         try:
-            response = openai.ChatCompletion.create(
-                engine="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=1000
-            )
-            recommendations = response['choices'][0]['message']['content'].strip()
+            recommendations = get_openai_recommendations(system_prompt, user_prompt)
             context['recommendations'] = parse_and_format(recommendations)
             coordinate_pattern = r"(\d+\.\d+)[^\d]*(\d+\.\d+)[^\d]*([NS, EW]*)"
             coordinates = re.findall(coordinate_pattern, recommendations)
@@ -165,15 +144,7 @@ def recommend_shopping_places(request):
             f"User input includes: {location_query}. Focus on malls, markets, retail shops, and unique shopping areas with discounts."
         )
         try:
-            response = openai.ChatCompletion.create(
-                engine="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=1000
-            )
-            recommendations = response['choices'][0]['message']['content'].strip()
+            recommendations = get_openai_recommendations(system_prompt, user_prompt)
             context['recommendations'] = parse_and_format(recommendations)
             coordinate_pattern = r"(\d+\.\d+)[^\d]*(\d+\.\d+)[^\d]*([NS, EW]*)"
             coordinates = re.findall(coordinate_pattern, recommendations)
@@ -208,15 +179,7 @@ def recommend_tourist_sites(request):
             f"User input includes: {location_query}. Focus cost, transportation, accessibility, tourguide, base on abu dhabi open data."
         )
         try:
-            response = openai.ChatCompletion.create(
-                engine="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=1000
-            )
-            recommendations = response['choices'][0]['message']['content'].strip()
+            recommendations = get_openai_recommendations(system_prompt, user_prompt)
             context['recommendations'] = parse_and_format(recommendations)
             coordinate_pattern = r"(\d+\.\d+)[^\d]*(\d+\.\d+)[^\d]*([NS, EW]*)"
             coordinates = re.findall(coordinate_pattern, recommendations)
@@ -250,15 +213,7 @@ def recommend_events(request):
             f"User input includes: {location_query}. events, accessibility, parking, base on abu dhabi open data, caltural events places"
         )
         try:
-            response = openai.ChatCompletion.create(
-                engine="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=1000
-            )
-            recommendations = response['choices'][0]['message']['content'].strip()
+            recommendations = get_openai_recommendations(system_prompt, user_prompt)
             context['recommendations'] = parse_and_format(recommendations)
             coordinate_pattern = r"(\d+\.\d+)[^\d]*(\d+\.\d+)[^\d]*([NS, EW]*)"
             coordinates = re.findall(coordinate_pattern, recommendations)
@@ -273,27 +228,31 @@ def recommend_events(request):
     return render(request, "SmartRoute/event.html", context)
 
 
-#  Genaral code 
-import logging
-logger = logging.getLogger(__name__)
+#  General code 
 
 def get_openai_recommendations(system_prompt, user_prompt):
+    """Get recommendations from Azure OpenAI using the modern SDK."""
+    if client is None:
+        logger.error("Azure OpenAI client is not initialized")
+        return "Azure OpenAI is not configured. Please check your environment variables."
+    
     try:
-        response = openai.ChatCompletion.create(
-            engine="gpt-4",
+        response = client.chat.completions.create(
+            model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
             max_tokens=1000
         )
-        if 'choices' in response and len(response['choices']) > 0:
-            return response['choices'][0]['message']['content'].strip()
+        if response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content.strip()
         else:
             return "No recommendations found."
     except Exception as e:
         logger.error(f"OpenAI API Error: {str(e)}")
         return "An error occurred while fetching recommendations."
+
 
 
 
