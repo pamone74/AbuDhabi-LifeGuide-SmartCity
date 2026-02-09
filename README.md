@@ -225,9 +225,16 @@ python manage.py collectstatic --noinput
 ```
 
 #### 4. Database migration errors
-**Solution:** Reset migrations
+**Solution:** Check migrations status first
 ```bash
-python manage.py migrate --run-syncdb
+# Check which migrations are applied
+python manage.py showmigrations
+
+# If there are unapplied migrations
+python manage.py migrate
+
+# If migrations are conflicting, try
+python manage.py migrate --fake-initial
 ```
 
 #### 5. Port already in use
